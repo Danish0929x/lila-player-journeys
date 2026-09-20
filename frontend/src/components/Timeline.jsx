@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import './Timeline.css'
 
 function Timeline({ matchId, matchData, playbackTime = 0, onPlaybackTimeChange }) {
   const [timeline, setTimeline] = useState(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const playbackTimeRef = useRef(playbackTime)
 
   useEffect(() => {
     if (!matchId) return
@@ -22,17 +23,22 @@ function Timeline({ matchId, matchData, playbackTime = 0, onPlaybackTimeChange }
     fetchTimeline()
   }, [matchId, onPlaybackTimeChange])
 
+  // Update ref when playbackTime changes
+  useEffect(() => {
+    playbackTimeRef.current = playbackTime
+  }, [playbackTime])
+
   useEffect(() => {
     if (!isPlaying || !timeline) return
 
     const interval = setInterval(() => {
-      onPlaybackTimeChange(prev => {
-        if (prev >= timeline.duration) {
-          setIsPlaying(false)
-          return prev
-        }
-        return prev + 100
-      })
+      const nextTime = playbackTimeRef.current + 100
+      if (nextTime >= timeline.duration) {
+        onPlaybackTimeChange(timeline.duration)
+        setIsPlaying(false)
+      } else {
+        onPlaybackTimeChange(nextTime)
+      }
     }, 100)
 
     return () => clearInterval(interval)
