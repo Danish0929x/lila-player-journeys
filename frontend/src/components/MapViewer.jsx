@@ -79,8 +79,10 @@ function MapViewer({ matchData, showHeatmap, heatmapType }) {
     // Draw path line
     if (events.length > 1) {
       ctx.strokeStyle = isSelected ? '#FFFFFF' : color
-      ctx.lineWidth = isSelected ? 2 : 1
-      ctx.globalAlpha = isSelected ? 1 : 0.5
+      ctx.lineWidth = isSelected ? 3 : 2.5
+      ctx.globalAlpha = isSelected ? 1 : 0.8
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
       ctx.beginPath()
 
       let pointCount = 0
@@ -100,33 +102,33 @@ function MapViewer({ matchData, showHeatmap, heatmapType }) {
       ctx.globalAlpha = 1
     }
 
-    // Draw events as markers
+    // Draw events as markers (only for non-Position events)
     events.forEach(event => {
-      if (!event.position) return
+      if (!event.position || event.event === 'Position' || event.event === 'BotPosition') return
 
       const { x, y } = event.position
       const eventType = event.event
 
-      ctx.globalAlpha = isSelected ? 1 : 0.7
+      ctx.globalAlpha = 1
 
       // Draw event marker
       if (eventType === 'Kill' || eventType === 'BotKill') {
-        ctx.fillStyle = '#FF4A4A'
-        ctx.fillRect(x - 4, y - 4, 8, 8)
+        ctx.fillStyle = '#FF1111'
+        ctx.fillRect(x - 5, y - 5, 10, 10)
       } else if (eventType === 'Killed' || eventType === 'BotKilled') {
-        ctx.fillStyle = '#FF6B6B'
+        ctx.fillStyle = '#FF3333'
+        ctx.beginPath()
+        ctx.arc(x, y, 6, 0, Math.PI * 2)
+        ctx.fill()
+      } else if (eventType === 'KilledByStorm') {
+        ctx.fillStyle = '#00FFFF'
         ctx.beginPath()
         ctx.arc(x, y, 5, 0, Math.PI * 2)
         ctx.fill()
-      } else if (eventType === 'KilledByStorm') {
-        ctx.fillStyle = '#00DDFF'
+      } else if (eventType === 'Loot') {
+        ctx.fillStyle = '#FFFF00'
         ctx.beginPath()
         ctx.arc(x, y, 4, 0, Math.PI * 2)
-        ctx.fill()
-      } else if (eventType === 'Loot') {
-        ctx.fillStyle = '#FFD700'
-        ctx.beginPath()
-        ctx.arc(x, y, 3, 0, Math.PI * 2)
         ctx.fill()
       }
 
@@ -137,20 +139,22 @@ function MapViewer({ matchData, showHeatmap, heatmapType }) {
     if (events.length > 0) {
       const startPos = events[0].position
       if (startPos) {
-        ctx.fillStyle = '#4AFF90'
+        ctx.fillStyle = '#00FF00'
+        ctx.globalAlpha = 1
         ctx.beginPath()
-        ctx.arc(startPos.x, startPos.y, 6, 0, Math.PI * 2)
+        ctx.arc(startPos.x, startPos.y, 8, 0, Math.PI * 2)
         ctx.fill()
       }
 
       const endPos = events[events.length - 1].position
       if (endPos) {
-        ctx.fillStyle = '#FF4A4A'
+        ctx.fillStyle = '#FF0000'
+        ctx.globalAlpha = 1
         ctx.beginPath()
-        ctx.arc(endPos.x, endPos.y, 6, 0, Math.PI * 2)
+        ctx.arc(endPos.x, endPos.y, 8, 0, Math.PI * 2)
         ctx.fill()
         ctx.strokeStyle = '#FFFFFF'
-        ctx.lineWidth = 2
+        ctx.lineWidth = 3
         ctx.stroke()
       }
     }
