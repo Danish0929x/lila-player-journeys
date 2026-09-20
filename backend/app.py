@@ -1,6 +1,6 @@
 import os
 import json
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 from data_processor import DataProcessor
 from dotenv import load_dotenv
@@ -49,6 +49,24 @@ def get_maps():
     """Get list of available maps and their config"""
     maps = processor.get_map_configs()
     return jsonify(maps)
+
+@app.route('/api/minimap/<map_name>', methods=['GET'])
+def get_minimap(map_name):
+    """Serve minimap image"""
+    minimap_files = {
+        'AmbroseValley': 'AmbroseValley_Minimap.png',
+        'GrandRift': 'GrandRift_Minimap.png',
+        'Lockdown': 'Lockdown_Minimap.jpg'
+    }
+
+    if map_name not in minimap_files:
+        return {'error': 'Map not found'}, 404
+
+    minimap_path = os.path.join(processor.minimap_dir, minimap_files[map_name])
+    if not os.path.exists(minimap_path):
+        return {'error': 'Minimap file not found'}, 404
+
+    return send_file(minimap_path, mimetype='image/png' if map_name != 'Lockdown' else 'image/jpeg')
 
 @app.route('/api/timeline/<match_id>', methods=['GET'])
 def get_timeline(match_id):

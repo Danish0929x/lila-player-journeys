@@ -13,14 +13,10 @@ function MapViewer({ matchData, showHeatmap, heatmapType }) {
 
     const mapId = matchData.map_id
     const img = new Image()
-    const mapNames = {
-      'AmbroseValley': 'AmbroseValley_Minimap.png',
-      'GrandRift': 'GrandRift_Minimap.png',
-      'Lockdown': 'Lockdown_Minimap.jpg'
-    }
 
-    img.src = `../../../lila/player_data/minimaps/${mapNames[mapId]}`
+    img.src = `/api/minimap/${mapId}`
     img.onload = () => setMinimap(img)
+    img.onerror = () => console.error(`Failed to load minimap for ${mapId}`)
   }, [matchData])
 
   useEffect(() => {
