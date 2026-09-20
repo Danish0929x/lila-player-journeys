@@ -2,11 +2,16 @@ import React, { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import './MapViewer.css'
 
-function MapViewer({ matchData, showHeatmap, heatmapType }) {
+function MapViewer({ matchData, showHeatmap, heatmapType, playbackTime = 0 }) {
   const canvasRef = useRef(null)
   const [minimap, setMinimap] = useState(null)
   const [heatmapData, setHeatmapData] = useState(null)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
+
+  const getEventsUpToTime = (events, maxTime) => {
+    if (maxTime === 0) return []
+    return events.filter(e => e.timestamp <= maxTime)
+  }
 
   useEffect(() => {
     if (!matchData) return
@@ -54,17 +59,17 @@ function MapViewer({ matchData, showHeatmap, heatmapType }) {
 
     // Draw player paths and events
     if (matchData && matchData.players && matchData.players.length > 0) {
-      console.log('Drawing', matchData.players.length, 'players')
       matchData.players.forEach((player, idx) => {
         const color = player.is_bot ? '#FFB300' : '#4A90FF'
-        const eventCount = player.events ? player.events.length : 0
-        console.log(`Player ${idx}: ${eventCount} events`)
-        drawPlayerPath(ctx, player, color, selectedPlayer === player.user_id)
+        // Filter events based on playback time
+        const filteredPlayer = {
+          ...player,
+          events: playbackTime > 0 ? getEventsUpToTime(player.events, playbackTime) : player.events
+        }
+        drawPlayerPath(ctx, filteredPlayer, color, selectedPlayer === player.user_id)
       })
-    } else {
-      console.log('No players to draw:', matchData)
     }
-  }, [minimap, matchData, showHeatmap, heatmapData, selectedPlayer])
+  }, [minimap, matchData, showHeatmap, heatmapData, selectedPlayer, playbackTime])
 
   const drawPlayerPath = (ctx, player, color, isSelected) => {
     const events = player.events || []

@@ -14,6 +14,7 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [showHeatmap, setShowHeatmap] = useState(false)
   const [heatmapType, setHeatmapType] = useState('traffic')
+  const [playbackTime, setPlaybackTime] = useState(0)
 
   useEffect(() => {
     fetchMatches()
@@ -112,9 +113,15 @@ function App() {
                 matchData={matchData}
                 showHeatmap={showHeatmap}
                 heatmapType={heatmapType}
+                playbackTime={playbackTime}
               />
 
-              <Timeline matchId={selectedMatch} />
+              <Timeline
+                matchId={selectedMatch}
+                matchData={matchData}
+                playbackTime={playbackTime}
+                onPlaybackTimeChange={setPlaybackTime}
+              />
             </>
           ) : (
             <div className="empty-state">

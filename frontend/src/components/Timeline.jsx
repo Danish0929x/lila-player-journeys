@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import './Timeline.css'
 
-function Timeline({ matchId }) {
+function Timeline({ matchId, matchData, playbackTime = 0, onPlaybackTimeChange }) {
   const [timeline, setTimeline] = useState(null)
-  const [currentTime, setCurrentTime] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
 
   useEffect(() => {
@@ -14,20 +13,20 @@ function Timeline({ matchId }) {
       try {
         const response = await axios.get(`/api/timeline/${matchId}`)
         setTimeline(response.data)
-        setCurrentTime(0)
+        onPlaybackTimeChange(0)
       } catch (error) {
         console.error('Error fetching timeline:', error)
       }
     }
 
     fetchTimeline()
-  }, [matchId])
+  }, [matchId, onPlaybackTimeChange])
 
   useEffect(() => {
     if (!isPlaying || !timeline) return
 
     const interval = setInterval(() => {
-      setCurrentTime(prev => {
+      onPlaybackTimeChange(prev => {
         if (prev >= timeline.duration) {
           setIsPlaying(false)
           return prev
@@ -37,7 +36,7 @@ function Timeline({ matchId }) {
     }, 100)
 
     return () => clearInterval(interval)
-  }, [isPlaying, timeline])
+  }, [isPlaying, timeline, onPlaybackTimeChange])
 
   if (!timeline) {
     return <div className="timeline">Loading...</div>
@@ -49,7 +48,7 @@ function Timeline({ matchId }) {
     return `${minutes}:${(seconds % 60).toString().padStart(2, '0')}`
   }
 
-  const currentEvents = timeline.events.filter(e => e.timestamp <= currentTime)
+  const currentEvents = timeline.events.filter(e => e.timestamp <= playbackTime)
   const kills = currentEvents.filter(e => e.event_type.includes('Kill')).length
   const deaths = currentEvents.filter(e => e.event_type.includes('Killed')).length
   const loots = currentEvents.filter(e => e.event_type === 'Loot').length
@@ -71,7 +70,7 @@ function Timeline({ matchId }) {
         </div>
         <div className="stat">
           <span className="label">Time</span>
-          <span className="value">{formatTime(currentTime)} / {formatTime(timeline.duration)}</span>
+          <span className="value">{formatTime(playbackTime)} / {formatTime(timeline.duration)}</span>
         </div>
       </div>
 
@@ -79,7 +78,7 @@ function Timeline({ matchId }) {
         <button onClick={() => setIsPlaying(!isPlaying)}>
           {isPlaying ? '⏸ Pause' : '▶ Play'}
         </button>
-        <button onClick={() => setCurrentTime(0)}>
+        <button onClick={() => onPlaybackTimeChange(0)}>
           ⏮ Reset
         </button>
       </div>
@@ -89,9 +88,9 @@ function Timeline({ matchId }) {
           type="range"
           min="0"
           max={timeline.duration}
-          value={currentTime}
+          value={playbackTime}
           onChange={(e) => {
-            setCurrentTime(Number(e.target.value))
+            onPlaybackTimeChange(Number(e.target.value))
             setIsPlaying(false)
           }}
           className="slider"
