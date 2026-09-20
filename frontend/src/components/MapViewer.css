@@ -1,19 +1,17 @@
 .map-viewer {
   flex: 1;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: auto;
   background-color: var(--bg-tertiary);
+  display: block;
+  padding: 20px;
 }
 
 .minimap-canvas {
-  max-width: 90%;
-  max-height: 90%;
   border: 2px solid var(--border-color);
   cursor: crosshair;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  image-rendering: crisp-edges;
 }
 
 .player-info {
@@ -42,4 +40,37 @@
 
 .player-info button:hover {
   color: var(--accent-red);
+}
+
+.zoom-controls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 8px;
+  z-index: 10;
+}
+
+.zoom-controls button {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-level {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  min-width: 50px;
+  text-align: center;
 }

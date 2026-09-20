@@ -7,6 +7,7 @@ function MapViewer({ matchData, showHeatmap, heatmapType, playbackTime = 0 }) {
   const [minimap, setMinimap] = useState(null)
   const [heatmapData, setHeatmapData] = useState(null)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
+  const [zoom, setZoom] = useState(1)
 
   const getEventsUpToTime = (events, maxTime) => {
     // Always show all events - accumulate as time progresses
@@ -55,9 +56,10 @@ function MapViewer({ matchData, showHeatmap, heatmapType, playbackTime = 0 }) {
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
 
-    // Set canvas size directly to 1024x1024 (no DPI scaling for now)
-    canvas.width = 1024
-    canvas.height = 1024
+    // Set canvas size based on zoom level
+    canvas.width = 1024 * zoom
+    canvas.height = 1024 * zoom
+    ctx.scale(zoom, zoom)
 
     // Draw minimap
     ctx.drawImage(minimap, 0, 0, 1024, 1024)
@@ -79,7 +81,7 @@ function MapViewer({ matchData, showHeatmap, heatmapType, playbackTime = 0 }) {
         drawPlayerPath(ctx, filteredPlayer, color, selectedPlayer === player.user_id)
       })
     }
-  }, [minimap, matchData, showHeatmap, heatmapData, selectedPlayer, playbackTime])
+  }, [minimap, matchData, showHeatmap, heatmapData, selectedPlayer, playbackTime, zoom])
 
   const drawPlayerPath = (ctx, player, color, isSelected) => {
     const events = player.events || []
@@ -245,6 +247,29 @@ function MapViewer({ matchData, showHeatmap, heatmapType, playbackTime = 0 }) {
         className="minimap-canvas"
         onClick={handleCanvasClick}
       />
+
+      <div className="zoom-controls">
+        <button
+          onClick={() => setZoom(Math.max(0.5, zoom - 0.5))}
+          title="Zoom out"
+        >
+          −
+        </button>
+        <div className="zoom-level">{Math.round(zoom * 100)}%</div>
+        <button
+          onClick={() => setZoom(Math.min(4, zoom + 0.5))}
+          title="Zoom in"
+        >
+          +
+        </button>
+        <button
+          onClick={() => setZoom(1)}
+          title="Reset zoom"
+        >
+          1:1
+        </button>
+      </div>
+
       {selectedPlayer && matchData && (
         <div className="player-info">
           <div>
