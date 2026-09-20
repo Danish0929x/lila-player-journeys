@@ -184,8 +184,15 @@ class DataProcessor:
         players = defaultdict(list)
         for _, row in df.iterrows():
             user_id = row['user_id_internal']
+            # ts is already in milliseconds from parquet
+            ts_value = row['ts']
+            if hasattr(ts_value, 'timestamp'):  # If it's a pandas Timestamp
+                timestamp_ms = int(ts_value.timestamp() * 1000)
+            else:  # If it's already a numeric value
+                timestamp_ms = int(ts_value)
+
             event_data = {
-                'timestamp': float(row['ts'].timestamp() * 1000),
+                'timestamp': timestamp_ms,
                 'event': row['event'],
                 'position': self._world_to_minimap(row['x'], row['z'], row['map_id']),
                 'elevation': float(row['y'])
@@ -218,8 +225,15 @@ class DataProcessor:
         # Get all events sorted by timestamp
         events = []
         for _, row in df.iterrows():
+            # ts is already in milliseconds from parquet
+            ts_value = row['ts']
+            if hasattr(ts_value, 'timestamp'):  # If it's a pandas Timestamp
+                timestamp_ms = int(ts_value.timestamp() * 1000)
+            else:  # If it's already a numeric value
+                timestamp_ms = int(ts_value)
+
             event = {
-                'timestamp': float(row['ts'].timestamp() * 1000),
+                'timestamp': timestamp_ms,
                 'user_id': row['user_id_internal'],
                 'event_type': row['event'],
                 'position': self._world_to_minimap(row['x'], row['z'], row['map_id']),

@@ -13,12 +13,10 @@ function MapViewer({ matchData, showHeatmap, heatmapType, playbackTime = 0 }) {
     if (!events || events.length === 0) return []
     if (maxTime === 0) return events
 
-    // Convert playback time from milliseconds to seconds and filter
-    const maxTimeSeconds = maxTime / 1000
+    // Filter events up to current playback time (both in milliseconds)
     const filtered = events.filter(e => {
-      // Handle both second and millisecond timestamps
       const ts = typeof e.timestamp === 'number' ? e.timestamp : parseFloat(e.timestamp)
-      return ts <= maxTimeSeconds
+      return ts <= maxTime
     })
 
     // Always show at least some events for visual feedback
