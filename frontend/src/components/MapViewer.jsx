@@ -9,9 +9,20 @@ function MapViewer({ matchData, showHeatmap, heatmapType, playbackTime = 0 }) {
   const [selectedPlayer, setSelectedPlayer] = useState(null)
 
   const getEventsUpToTime = (events, maxTime) => {
-    if (maxTime === 0) return events  // Show all events initially
-    const maxTimeSeconds = maxTime / 1000  // Convert ms to seconds
-    return events.filter(e => e.timestamp <= maxTimeSeconds)
+    // Always show all events - accumulate as time progresses
+    if (!events || events.length === 0) return []
+    if (maxTime === 0) return events
+
+    // Convert playback time from milliseconds to seconds and filter
+    const maxTimeSeconds = maxTime / 1000
+    const filtered = events.filter(e => {
+      // Handle both second and millisecond timestamps
+      const ts = typeof e.timestamp === 'number' ? e.timestamp : parseFloat(e.timestamp)
+      return ts <= maxTimeSeconds
+    })
+
+    // Always show at least some events for visual feedback
+    return filtered.length > 0 ? filtered : events
   }
 
   useEffect(() => {
