@@ -9,8 +9,9 @@ function MapViewer({ matchData, showHeatmap, heatmapType, playbackTime = 0 }) {
   const [selectedPlayer, setSelectedPlayer] = useState(null)
 
   const getEventsUpToTime = (events, maxTime) => {
-    if (maxTime === 0) return []
-    return events.filter(e => e.timestamp <= maxTime)
+    if (maxTime === 0) return events  // Show all events initially
+    const maxTimeSeconds = maxTime / 1000  // Convert ms to seconds
+    return events.filter(e => e.timestamp <= maxTimeSeconds)
   }
 
   useEffect(() => {
