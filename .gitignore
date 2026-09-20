@@ -46,8 +46,7 @@ frontend/node_modules/
 .env.local
 .env.*.local
 
-# Data (don't commit raw data)
-lila/
+# NOTE: data/ is intentionally committed — the deployed app reads it at startup.
 
 # OS
 .DS_Store

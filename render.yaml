@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: lila-player-journeys
+    runtime: python
+    buildCommand: >-
+      pip install -r backend/requirements.txt &&
+      npm --prefix frontend ci &&
+      npm --prefix frontend run build
+    startCommand: gunicorn --chdir backend --timeout 120 app:app
+    envVars:
+      - key: DATA_DIR
+        value: ../data
+      - key: PYTHON_VERSION
+        value: "3.11"

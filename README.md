@@ -1,166 +1,74 @@
-# LILA BLACK - Player Journey Visualization Tool
+# LILA BLACK — Player Journey Visualization
 
-A web-based visualization tool for exploring player behavior and movement patterns in LILA BLACK extraction shooter matches.
+A browser tool for Level Designers to see how players actually move through LILA BLACK maps: journey paths on the real minimap, kill/death/loot/storm markers, match playback, and heatmaps.
 
-## Tech Stack
+**Live:** _<add deployed URL here>_
 
-- **Frontend**: React 18 + Vite + Canvas API
-- **Backend**: Flask (Python)
-- **Data Processing**: PyArrow + Pandas
-- **Styling**: CSS3 with CSS variables (dark theme)
+## Tech stack
 
-## Project Structure
+| Layer | Choice | Why |
+|---|---|---|
+| Frontend | React 18 + Vite | Fast dev loop, no framework overhead for a single-view tool |
+| Rendering | HTML5 Canvas | Thousands of path points per match; SVG/DOM nodes would stall |
+| Backend | Flask (Python) | Parquet lives in the Python ecosystem (pyarrow/pandas) |
+| Data | pyarrow + pandas | Reads the `.nakama-0` parquet files directly |
+| Hosting | Single Render web service | Flask serves both the API and the built React app — one URL, no CORS |
 
-```
-lila-visualization/
-├── backend/           # Flask API server
-│   ├── app.py        # Main Flask application
-│   ├── data_processor.py  # Parquet parsing & data handling
-│   ├── requirements.txt   # Python dependencies
-│   └── .env          # Environment variables
-├── frontend/         # React SPA
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── MapViewer.jsx      # Canvas-based map visualization
-│   │   │   ├── MatchFilter.jsx    # Filtering interface
-│   │   │   └── Timeline.jsx       # Playback controls
-│   │   ├── App.jsx
-│   │   └── index.css
-│   ├── package.json
-│   └── vite.config.js
-└── lila/player_data/  # Telemetry data (not in repo)
-    ├── February_10/
-    ├── February_11/
-    ├── February_12/
-    ├── February_13/
-    ├── February_14/
-    └── minimaps/
-```
+## Running locally
 
-## Setup Instructions
+Two terminals. Backend first.
 
-### Backend Setup
-
-1. Navigate to backend directory:
+**Backend** (http://localhost:5000)
 ```bash
 cd backend
-```
-
-2. Create a Python virtual environment:
-```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
+python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-```
-
-4. Ensure `.env` is configured:
-```
-DATA_DIR=../lila/player_data
-FLASK_ENV=development
-FLASK_DEBUG=1
-```
-
-5. Run the Flask server:
-```bash
 python app.py
 ```
+Wait for `Loaded 796 matches` (~2s).
 
-The backend will start on `http://localhost:5000`
-
-### Frontend Setup
-
-1. Navigate to frontend directory:
+**Frontend** (http://localhost:5173)
 ```bash
 cd frontend
-```
-
-2. Install dependencies:
-```bash
 npm install
-```
-
-3. Start the development server:
-```bash
 npm run dev
 ```
+Vite proxies `/api/*` to port 5000, so open the Vite URL.
 
-The frontend will start on `http://localhost:5173` and proxy API calls to `http://localhost:5000`
+## Environment variables
 
-## Features
+| Variable | Default | Purpose |
+|---|---|---|
+| `DATA_DIR` | `../data` | Path to the telemetry folder (the `February_*` dirs + `minimaps/`) |
+| `PORT` | `5000` | Server port. Render sets this automatically. |
 
-### Core Features
-- ✅ **Match Browser**: Filter and browse matches by map and date
-- ✅ **Player Visualization**: Display player paths as lines on minimap with distinct colors for humans/bots
-- ✅ **Event Markers**: Show kills, deaths, loot pickups, and storm deaths as distinct markers
-- ✅ **Heatmaps**: Visualize traffic concentration, kill zones, and death zones
-- ✅ **Timeline Playback**: Scrub through match events with play/pause controls
-- ✅ **Player Selection**: Click on player paths to highlight and get more details
+Only `DATA_DIR` matters for local use, and the default is already correct.
 
-### Coordinate System
-- World coordinates (x, z) are converted to minimap pixels using provided scale and origin values
-- Y coordinate represents elevation (not used for 2D minimap plotting)
-- Minimap images are 1024x1024 pixels
+## Deploying
 
-### Event Types
-- **Movement**: Position (humans), BotPosition (bots)
-- **Combat**: Kill, Killed, BotKill, BotKilled
-- **Environment**: KilledByStorm
-- **Items**: Loot
+The repo deploys as **one service**: the build compiles React to `frontend/dist`, and Flask serves those static files alongside the API.
 
-## API Endpoints
+On Render, `render.yaml` is picked up automatically — connect the repo and deploy. The equivalent manual settings:
 
-- `GET /api/health` - Health check
-- `GET /api/matches?map=<map>&date=<date>` - List matches with optional filters
-- `GET /api/match/<match_id>` - Get detailed match data with all player journeys
-- `GET /api/maps` - Get map configurations (scale, origin, minimap URLs)
-- `GET /api/timeline/<match_id>` - Get ordered events for playback
-- `GET /api/heatmap/<match_id>?type=<traffic|kills|deaths>` - Get heatmap data
+- **Build:** `pip install -r backend/requirements.txt && npm --prefix frontend ci && npm --prefix frontend run build`
+- **Start:** `gunicorn --chdir backend --timeout 120 app:app`
+- **Env:** `DATA_DIR=../data`
 
-## Environment Variables
+The telemetry lives in `data/` and is committed to the repo (~17MB), so there is no external storage or database to configure. Minimaps were downscaled to 2048px (from up to 9000×9000) — they render at 1024px, so this costs nothing visually and cuts image payload from 23MB to 6.5MB.
 
-### Backend
-- `DATA_DIR` - Path to the player_data directory (default: `../lila/player_data`)
-- `FLASK_ENV` - Set to `development` or `production`
-- `FLASK_DEBUG` - Set to 1 for debug mode
+## API
 
-## Known Limitations & Assumptions
+| Endpoint | Returns |
+|---|---|
+| `GET /api/matches?map=&date=` | Match list with player counts |
+| `GET /api/match/<id>` | Every player's journey (path + events) |
+| `GET /api/timeline/<id>` | All match events ordered by time, plus duration |
+| `GET /api/heatmap/<id>?type=traffic\|kills\|deaths` | 16×16 normalised intensity grid |
+| `GET /api/maps` | Scale/origin config per map |
+| `GET /api/minimap/<map>` | Minimap image |
+| `GET /api/health` | Health check |
 
-1. **Minimap paths are relative** - The tool assumes `lila/player_data/minimaps/` exists relative to the backend
-2. **Heatmap grid size** - 64x64 pixels (16x16 grid on 1024x1024 minimap) for performance
-3. **Timestamp interpretation** - The `ts` column represents time within the match (in milliseconds), not wall-clock time
-4. **File format** - Parquet files have no `.parquet` extension but are valid parquet files
-5. **Bot detection** - Bots are identified by numeric user_id; humans have UUID user_ids
+## Docs
 
-## Building for Production
-
-### Backend
-```bash
-gunicorn -w 4 -b 0.0.0.0:5000 app:app
-```
-
-### Frontend
-```bash
-npm run build
-# Build output in dist/
-```
-
-Deploy the `frontend/dist/` folder to a static hosting service (Vercel, Netlify, etc.)
-
-## Performance Notes
-
-- The backend loads all parquet files on startup (takes ~30 seconds)
-- Data is cached in memory for fast API responses
-- Frontend uses Canvas API for efficient minimap rendering
-- Heatmap computation is done server-side
-
-## Future Improvements
-
-- Stream data loading instead of loading all files at startup
-- Add more sophisticated filtering (player name, kill count, etc.)
-- Export player paths as CSV/GeoJSON
-- Real-time match tracking
-- 3D elevation visualization
+- [ARCHITECTURE.md](ARCHITECTURE.md) — design decisions, data flow, coordinate mapping, trade-offs
+- [INSIGHTS.md](INSIGHTS.md) — three things the data revealed about the game

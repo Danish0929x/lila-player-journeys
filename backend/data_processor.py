@@ -56,6 +56,8 @@ class DataProcessor:
             'events': []
         })
 
+        frames_by_match = defaultdict(list)
+
         # Iterate through all date folders
         for date_folder in sorted(os.listdir(self.data_dir)):
             if not date_folder.startswith('February_'):
@@ -103,13 +105,16 @@ class DataProcessor:
                         else:
                             self.matches_cache[match_id]['human_players'].add(user_id)
 
-                        # Store events with user_id
+                        # One file = one player, so a match spans many files
                         df['user_id_internal'] = user_id
-                        self.match_data_cache[match_id] = df
+                        frames_by_match[match_id].append(df)
 
                 except Exception as e:
                     print(f"Error loading {filename}: {e}")
                     continue
+
+        for match_id, frames in frames_by_match.items():
+            self.match_data_cache[match_id] = pd.concat(frames, ignore_index=True)
 
         print(f"Loaded {len(self.matches_cache)} matches")
 
@@ -173,26 +178,32 @@ class DataProcessor:
 
         return sorted(matches, key=lambda x: x['date'], reverse=True)
 
+    def _relative_ms(self, df):
+        """
+        Match-relative elapsed milliseconds for every row, as an int Series.
+
+        The parquet column is typed timestamp[ms], but the stored integers are
+        really epoch *seconds* (e.g. 1770754537 -> Feb 2026, when this data was
+        captured). Read as ms they decode to a bogus 1970-01-21. So the raw
+        integer is a seconds count: differences are seconds, and x1000 -> ms.
+        """
+        raw_seconds = df['ts'].astype('int64')  # datetime64[ms] -> underlying int
+        return (raw_seconds - raw_seconds.min()) * 1000
+
     def get_match_data(self, match_id):
         """Get detailed data for a specific match"""
         if match_id not in self.match_data_cache:
             return None
 
         df = self.match_data_cache[match_id]
+        rel_ms = self._relative_ms(df)
 
         # Group events by player
         players = defaultdict(list)
-        for _, row in df.iterrows():
+        for (_, row), ts in zip(df.iterrows(), rel_ms):
             user_id = row['user_id_internal']
-            # ts is already in milliseconds from parquet
-            ts_value = row['ts']
-            if hasattr(ts_value, 'timestamp'):  # If it's a pandas Timestamp
-                timestamp_ms = int(ts_value.timestamp() * 1000)
-            else:  # If it's already a numeric value
-                timestamp_ms = int(ts_value)
-
             event_data = {
-                'timestamp': timestamp_ms,
+                'timestamp': int(ts),
                 'event': row['event'],
                 'position': self._world_to_minimap(row['x'], row['z'], row['map_id']),
                 'elevation': float(row['y'])
@@ -221,19 +232,14 @@ class DataProcessor:
             return None
 
         df = self.match_data_cache[match_id]
+        # Same t=0 reference as get_match_data so filtering and scrubbing agree
+        rel_ms = self._relative_ms(df)
 
         # Get all events sorted by timestamp
         events = []
-        for _, row in df.iterrows():
-            # ts is already in milliseconds from parquet
-            ts_value = row['ts']
-            if hasattr(ts_value, 'timestamp'):  # If it's a pandas Timestamp
-                timestamp_ms = int(ts_value.timestamp() * 1000)
-            else:  # If it's already a numeric value
-                timestamp_ms = int(ts_value)
-
+        for (_, row), ts in zip(df.iterrows(), rel_ms):
             event = {
-                'timestamp': timestamp_ms,
+                'timestamp': int(ts),
                 'user_id': row['user_id_internal'],
                 'event_type': row['event'],
                 'position': self._world_to_minimap(row['x'], row['z'], row['map_id']),

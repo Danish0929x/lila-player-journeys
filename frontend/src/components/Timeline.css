@@ -1,62 +1,48 @@
 .timeline {
   background-color: var(--bg-secondary);
   border-top: 1px solid var(--border-color);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.timeline-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 12px;
-}
-
-.stat {
-  background-color: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.stat .label {
-  font-size: 12px;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.stat .value {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--accent-blue);
-}
-
-.timeline-controls {
-  display: flex;
-  gap: 8px;
-}
-
-.timeline-controls button {
-  flex: 1;
   padding: 10px 16px;
+  flex-shrink: 0;
 }
 
-.timeline-slider {
+.timeline-loading {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.timeline-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+}
+
+.transport {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  font-size: 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.time-readout {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 96px;
+}
+
+.time-total {
+  color: var(--text-secondary);
 }
 
 .slider {
   flex: 1;
-  width: 100%;
-  height: 6px;
+  min-width: 120px;
+  height: 5px;
   border-radius: 3px;
   background: var(--bg-tertiary);
   outline: none;
@@ -66,20 +52,52 @@
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: var(--accent-blue);
   cursor: pointer;
-  box-shadow: 0 0 8px rgba(74, 144, 255, 0.5);
 }
 
 .slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: var(--accent-blue);
   cursor: pointer;
   border: none;
-  box-shadow: 0 0 8px rgba(74, 144, 255, 0.5);
+}
+
+.speed {
+  padding: 6px 8px;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.inline-stats {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.chip {
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 12px;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip.kills {
+  color: var(--accent-red);
+}
+
+.chip.deaths {
+  color: #ff8c8c;
+}
+
+.chip.loots {
+  color: var(--accent-yellow);
 }

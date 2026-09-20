@@ -7,21 +7,12 @@ function MapViewer({ matchData, showHeatmap, heatmapType, playbackTime = 0 }) {
   const [minimap, setMinimap] = useState(null)
   const [heatmapData, setHeatmapData] = useState(null)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
-  const [zoom, setZoom] = useState(1)
 
+  // Timestamps are match-relative milliseconds; t=0 shows the full journey
   const getEventsUpToTime = (events, maxTime) => {
-    // Always show all events - accumulate as time progresses
     if (!events || events.length === 0) return []
     if (maxTime === 0) return events
-
-    // Filter events up to current playback time (both in milliseconds)
-    const filtered = events.filter(e => {
-      const ts = typeof e.timestamp === 'number' ? e.timestamp : parseFloat(e.timestamp)
-      return ts <= maxTime
-    })
-
-    // Always show at least some events for visual feedback
-    return filtered.length > 0 ? filtered : events
+    return events.filter((e) => e.timestamp <= maxTime)
   }
 
   useEffect(() => {
@@ -56,10 +47,9 @@ function MapViewer({ matchData, showHeatmap, heatmapType, playbackTime = 0 }) {
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
 
-    // Set canvas size based on zoom level
-    canvas.width = 1024 * zoom
-    canvas.height = 1024 * zoom
-    ctx.scale(zoom, zoom)
+    // Canvas renders at native minimap resolution; CSS scales it to a square
+    canvas.width = 1024
+    canvas.height = 1024
 
     // Draw minimap
     ctx.drawImage(minimap, 0, 0, 1024, 1024)
@@ -81,17 +71,12 @@ function MapViewer({ matchData, showHeatmap, heatmapType, playbackTime = 0 }) {
         drawPlayerPath(ctx, filteredPlayer, color, selectedPlayer === player.user_id)
       })
     }
-  }, [minimap, matchData, showHeatmap, heatmapData, selectedPlayer, playbackTime, zoom])
+  }, [minimap, matchData, showHeatmap, heatmapData, selectedPlayer, playbackTime])
 
   const drawPlayerPath = (ctx, player, color, isSelected) => {
     const events = player.events || []
 
-    if (events.length === 0) {
-      console.log(`Player ${player.user_id} has no events`)
-      return
-    }
-
-    console.log(`Drawing ${player.user_id}: ${events.length} events, first pos:`, events[0]?.position)
+    if (events.length === 0) return
 
     // Draw path line
     if (events.length > 1) {
@@ -114,7 +99,6 @@ function MapViewer({ matchData, showHeatmap, heatmapType, playbackTime = 0 }) {
           pointCount++
         }
       }
-      console.log(`Drew ${pointCount} points for player ${player.user_id}`)
       ctx.stroke()
       ctx.globalAlpha = 1
     }
@@ -161,6 +145,12 @@ function MapViewer({ matchData, showHeatmap, heatmapType, playbackTime = 0 }) {
         ctx.beginPath()
         ctx.arc(startPos.x, startPos.y, 8, 0, Math.PI * 2)
         ctx.fill()
+
+        // Draw start label
+        ctx.fillStyle = '#00FF00'
+        ctx.font = 'bold 10px Arial'
+        ctx.textAlign = 'left'
+        ctx.fillText('START', startPos.x + 12, startPos.y - 5)
       }
 
       const endPos = events[events.length - 1].position
@@ -173,6 +163,12 @@ function MapViewer({ matchData, showHeatmap, heatmapType, playbackTime = 0 }) {
         ctx.strokeStyle = '#FFFFFF'
         ctx.lineWidth = 3
         ctx.stroke()
+
+        // Draw end label
+        ctx.fillStyle = '#FF0000'
+        ctx.font = 'bold 10px Arial'
+        ctx.textAlign = 'left'
+        ctx.fillText('END', endPos.x + 12, endPos.y - 5)
       }
     }
   }
@@ -218,8 +214,9 @@ function MapViewer({ matchData, showHeatmap, heatmapType, playbackTime = 0 }) {
   const handleCanvasClick = (e) => {
     const canvas = canvasRef.current
     const rect = canvas.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    // Convert CSS pixels to the canvas's 1024x1024 coordinate space
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width)
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height)
 
     if (!matchData) return
 
@@ -248,26 +245,35 @@ function MapViewer({ matchData, showHeatmap, heatmapType, playbackTime = 0 }) {
         onClick={handleCanvasClick}
       />
 
-      <div className="zoom-controls">
-        <button
-          onClick={() => setZoom(Math.max(0.5, zoom - 0.5))}
-          title="Zoom out"
-        >
-          −
-        </button>
-        <div className="zoom-level">{Math.round(zoom * 100)}%</div>
-        <button
-          onClick={() => setZoom(Math.min(4, zoom + 0.5))}
-          title="Zoom in"
-        >
-          +
-        </button>
-        <button
-          onClick={() => setZoom(1)}
-          title="Reset zoom"
-        >
-          1:1
-        </button>
+      <div className="map-legend">
+        <div className="legend-row">
+          <span className="legend-swatch line" style={{ background: '#4A90FF' }} />
+          Human path
+        </div>
+        <div className="legend-row">
+          <span className="legend-swatch line" style={{ background: '#FFB300' }} />
+          Bot path
+        </div>
+        <div className="legend-row">
+          <span className="legend-swatch" style={{ background: '#00FF00' }} />
+          Start
+        </div>
+        <div className="legend-row">
+          <span className="legend-swatch square" style={{ background: '#FF1111' }} />
+          Kill
+        </div>
+        <div className="legend-row">
+          <span className="legend-swatch" style={{ background: '#FF3333' }} />
+          Death
+        </div>
+        <div className="legend-row">
+          <span className="legend-swatch" style={{ background: '#00FFFF' }} />
+          Storm death
+        </div>
+        <div className="legend-row">
+          <span className="legend-swatch" style={{ background: '#FFFF00' }} />
+          Loot
+        </div>
       </div>
 
       {selectedPlayer && matchData && (

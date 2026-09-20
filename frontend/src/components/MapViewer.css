@@ -1,17 +1,25 @@
 .map-viewer {
   flex: 1;
+  min-height: 0;
   position: relative;
-  overflow: auto;
+  overflow: hidden;
   background-color: var(--bg-tertiary);
-  display: block;
-  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
 }
 
+/* Square map: fills available height, shrinks if the container is narrower */
 .minimap-canvas {
+  height: 100%;
+  width: auto;
+  aspect-ratio: 1 / 1;
+  max-width: 100%;
   border: 2px solid var(--border-color);
+  border-radius: 4px;
   cursor: crosshair;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  image-rendering: crisp-edges;
 }
 
 .player-info {
@@ -42,35 +50,41 @@
   color: var(--accent-red);
 }
 
-.zoom-controls {
+.map-legend {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  display: flex;
-  gap: 8px;
-  background-color: var(--bg-secondary);
+  top: 24px;
+  left: 24px;
+  background-color: rgba(26, 26, 46, 0.92);
   border: 1px solid var(--border-color);
   border-radius: 6px;
-  padding: 8px;
-  z-index: 10;
-}
-
-.zoom-controls button {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  font-size: 18px;
+  padding: 12px 14px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.zoom-level {
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
+  flex-direction: column;
+  gap: 8px;
   font-size: 12px;
+  pointer-events: none;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--text-secondary);
-  min-width: 50px;
-  text-align: center;
+}
+
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-swatch.line {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.legend-swatch.square {
+  border-radius: 2px;
 }

@@ -9,12 +9,13 @@ function App() {
   const [matches, setMatches] = useState([])
   const [selectedMatch, setSelectedMatch] = useState(null)
   const [matchData, setMatchData] = useState(null)
-  const [mapFilter, setMapFilter] = useState('')
+  const [mapFilter, setMapFilter] = useState('AmbroseValley')
   const [dateFilter, setDateFilter] = useState('')
   const [loading, setLoading] = useState(false)
   const [showHeatmap, setShowHeatmap] = useState(false)
   const [heatmapType, setHeatmapType] = useState('traffic')
   const [playbackTime, setPlaybackTime] = useState(0)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
 
   useEffect(() => {
     fetchMatches()
@@ -29,6 +30,11 @@ function App() {
 
       const response = await axios.get(`/api/matches?${params}`)
       setMatches(response.data)
+
+      // Auto-select first match
+      if (response.data.length > 0 && !selectedMatch) {
+        handleSelectMatch(response.data[0].match_id)
+      }
     } catch (error) {
       console.error('Error fetching matches:', error)
     }
@@ -50,12 +56,19 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
+        <button
+          className="sidebar-toggle"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+        >
+          {sidebarOpen ? '☰ Hide' : '☰ Show'}
+        </button>
         <h1>⚫ LILA BLACK - Player Journey Visualization</h1>
         <p>Explore player behavior and map dynamics</p>
       </header>
 
       <div className="app-container">
-        <aside className="sidebar">
+        <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
           <MatchFilter
             mapFilter={mapFilter}
             dateFilter={dateFilter}
@@ -118,7 +131,6 @@ function App() {
 
               <Timeline
                 matchId={selectedMatch}
-                matchData={matchData}
                 playbackTime={playbackTime}
                 onPlaybackTimeChange={setPlaybackTime}
               />

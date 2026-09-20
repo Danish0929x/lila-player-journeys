@@ -1,17 +1,21 @@
 import os
-import json
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request, send_file, send_from_directory
 from flask_cors import CORS
 from data_processor import DataProcessor
 from dotenv import load_dotenv
 
 load_dotenv()
 
-app = Flask(__name__)
+# In production Flask also serves the built React app from frontend/dist
+DIST_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', 'frontend', 'dist')
+)
+
+app = Flask(__name__, static_folder=DIST_DIR, static_url_path='')
 CORS(app)
 
 # Initialize data processor
-data_dir = os.getenv('DATA_DIR', '../lila/player_data')
+data_dir = os.getenv('DATA_DIR', '../data')
 processor = DataProcessor(data_dir)
 
 @app.route('/api/health', methods=['GET'])
@@ -76,5 +80,18 @@ def get_timeline(match_id):
         return jsonify(timeline)
     return jsonify({'error': 'Timeline not found'}), 404
 
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_frontend(path):
+    """Serve the built React app; unknown paths fall back to index.html"""
+    if path and os.path.exists(os.path.join(DIST_DIR, path)):
+        return send_from_directory(DIST_DIR, path)
+    index = os.path.join(DIST_DIR, 'index.html')
+    if not os.path.exists(index):
+        return jsonify({'error': 'Frontend not built. Run: npm run build'}), 404
+    return send_from_directory(DIST_DIR, 'index.html')
+
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.getenv('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
