@@ -39,11 +39,10 @@ function MapViewer({ matchData, showHeatmap, heatmapType }) {
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
-    const dpr = window.devicePixelRatio || 1
 
-    canvas.width = 1024 * dpr
-    canvas.height = 1024 * dpr
-    ctx.scale(dpr, dpr)
+    // Set canvas size directly to 1024x1024 (no DPI scaling for now)
+    canvas.width = 1024
+    canvas.height = 1024
 
     // Draw minimap
     ctx.drawImage(minimap, 0, 0, 1024, 1024)
@@ -54,16 +53,28 @@ function MapViewer({ matchData, showHeatmap, heatmapType }) {
     }
 
     // Draw player paths and events
-    if (matchData && matchData.players) {
+    if (matchData && matchData.players && matchData.players.length > 0) {
+      console.log('Drawing', matchData.players.length, 'players')
       matchData.players.forEach((player, idx) => {
         const color = player.is_bot ? '#FFB300' : '#4A90FF'
+        const eventCount = player.events ? player.events.length : 0
+        console.log(`Player ${idx}: ${eventCount} events`)
         drawPlayerPath(ctx, player, color, selectedPlayer === player.user_id)
       })
+    } else {
+      console.log('No players to draw:', matchData)
     }
   }, [minimap, matchData, showHeatmap, heatmapData, selectedPlayer])
 
   const drawPlayerPath = (ctx, player, color, isSelected) => {
     const events = player.events || []
+
+    if (events.length === 0) {
+      console.log(`Player ${player.user_id} has no events`)
+      return
+    }
+
+    console.log(`Drawing ${player.user_id}: ${events.length} events, first pos:`, events[0]?.position)
 
     // Draw path line
     if (events.length > 1) {
@@ -72,16 +83,19 @@ function MapViewer({ matchData, showHeatmap, heatmapType }) {
       ctx.globalAlpha = isSelected ? 1 : 0.5
       ctx.beginPath()
 
+      let pointCount = 0
       for (let i = 0; i < events.length; i++) {
         const pos = events[i].position
-        if (pos) {
-          if (i === 0) {
+        if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+          if (pointCount === 0) {
             ctx.moveTo(pos.x, pos.y)
           } else {
             ctx.lineTo(pos.x, pos.y)
           }
+          pointCount++
         }
       }
+      console.log(`Drew ${pointCount} points for player ${player.user_id}`)
       ctx.stroke()
       ctx.globalAlpha = 1
     }
