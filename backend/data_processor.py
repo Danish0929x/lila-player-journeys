@@ -8,6 +8,10 @@ from datetime import datetime
 
 class DataProcessor:
     def __init__(self, data_dir):
+        # Resolve data_dir to absolute path
+        if not os.path.isabs(data_dir):
+            data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), data_dir))
+
         self.data_dir = data_dir
         self.minimap_dir = os.path.join(data_dir, 'minimaps')
 
