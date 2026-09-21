@@ -2,7 +2,9 @@
 
 A browser tool for Level Designers to see how players actually move through LILA BLACK maps: journey paths on the real minimap, kill/death/loot/storm markers, match playback, and heatmaps.
 
-**Live:** _<add deployed URL here>_
+**Live:** https://lila-player-journeys.onrender.com
+
+> Hosted on Render's free tier, which sleeps after 15 minutes idle — the first request may take ~30s to wake the service. Subsequent loads are immediate.
 
 ## Tech stack
 
