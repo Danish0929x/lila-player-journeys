@@ -2,6 +2,7 @@ services:
   - type: web
     name: lila-player-journeys
     runtime: python
+    plan: free
     buildCommand: >-
       pip install -r backend/requirements.txt &&
       npm --prefix frontend ci &&
